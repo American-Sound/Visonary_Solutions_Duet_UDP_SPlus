@@ -15,7 +15,7 @@ Comments:
   (Uncomment and declare compiler directives as needed)
 *******************************************************************************************/
 // #ENABLE_DYNAMIC
-#SYMBOL_NAME "Visionary Solutions MV4 Encoder"
+#SYMBOL_NAME "Visionary Solutions Duet E-2 Encoder UDP"
 #HINT "Multi-Window specific funtions of the MV4 output encoder"
 // #DEFINE_CONSTANT
 #DEFINE_CONSTANT PIP 5
