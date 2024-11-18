@@ -16,7 +16,7 @@ Comments:
 *******************************************************************************************/
 // #ENABLE_DYNAMIC
 #SYMBOL_NAME "Visionary Solutions Duet E-2 Encoder UDP"
-#HINT "Multi-Window specific funtions of the MV4 output encoder"
+#HINT "Duet E-2 Single unit control via UDP"
 // #DEFINE_CONSTANT
 #DEFINE_CONSTANT PIP 5
 #DEFINE_CONSTANT POP 6
