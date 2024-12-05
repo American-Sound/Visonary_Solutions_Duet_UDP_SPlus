@@ -48,4 +48,9 @@ Thumbs.db
 *.mov
 *.wmv
 
-/*.sm2
+#Crestron SIMPL and VTPro-E
+*.ASV
+*.hash
+*.smft
+*.sm2
+SPlsWork/
