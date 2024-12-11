@@ -18,12 +18,8 @@ Comments:
 #SYMBOL_NAME "Visionary Solutions Duet E-2 Encoder UDP"
 #HINT "Duet E-2 Single unit control via UDP"
 // #DEFINE_CONSTANT
-#DEFINE_CONSTANT PIP 5
-#DEFINE_CONSTANT POP 6
-#DEFINE_CONSTANT QUAD 7
-
-
 // #CATEGORY "" 
+#CATEGORY "38" // Signal Routing
 // #PRINT_TO_TRACE
 // #DIGITAL_EXPAND 
 // #ANALOG_SERIAL_EXPAND 
@@ -55,37 +51,46 @@ Comments:
 *******************************************************************************************/
 // DIGITAL_INPUT
 DIGITAL_INPUT debug_enable;
-DIGITAL_INPUT poll_mode;
-DIGITAL_INPUT poll_encoder_audio_source;
-DIGITAL_INPUT borders_all_on;
-DIGITAL_INPUT borders_all_off;
-DIGITAL_INPUT pip_mode_set;
-DIGITAL_INPUT pap_mode_set;
-DIGITAL_INPUT quad_mode_set;
-DIGITAL_INPUT encoder_fullscreen_mode_set[4];
-DIGITAL_INPUT encoder_audio_source_set[4];
+DIGITAL_INPUT poll_video_source;
+DIGITAL_INPUT poll_audio_source;
+DIGITAL_INPUT poll_video_detected;
+DIGITAL_INPUT _SKIP_; 
+DIGITAL_INPUT stream_audio_hdmi;
+DIGITAL_INPUT stream_audio_analog;
+DIGITAL_INPUT stream_audio_dante;
+DIGITAL_INPUT stream_audio_bluetooth;
+DIGITAL_INPUT stream_video_hdmi1;
+DIGITAL_INPUT stream_video_hdmi2;
+DIGITAL_INPUT stream_video_usbc;
+DIGITAL_INPUT stream_video_auto;
+
+
 
  
 // ANALOG_INPUT 
 // STRING_INPUT 
 // BUFFER_INPUT 
+BUFFER_INPUT _SKIP_;
 BUFFER_INPUT rx$[255];
 
 // DIGITAL_OUTPUT
 DIGITAL_OUTPUT _SKIP_; 
 DIGITAL_OUTPUT _SKIP_; 
 DIGITAL_OUTPUT _SKIP_; 
+DIGITAL_OUTPUT video_detected_fb; 
 DIGITAL_OUTPUT _SKIP_; 
-DIGITAL_OUTPUT _SKIP_; 
-DIGITAL_OUTPUT pip_mode_fb;
-DIGITAL_OUTPUT pap_mode_fb;
-DIGITAL_OUTPUT quad_mode_fb;
-DIGITAL_OUTPUT encoder_fullscreen_mode_fb[4];
-DIGITAL_OUTPUT encoder_audio_source_fb[4];
+DIGITAL_OUTPUT stream_audio_hdmi_fb;
+DIGITAL_OUTPUT stream_audio_analog_fb;
+DIGITAL_OUTPUT stream_audio_dante_fb;
+DIGITAL_OUTPUT stream_audio_bluetooth_fb;
+DIGITAL_OUTPUT stream_video_hdmi1_fb;
+DIGITAL_OUTPUT stream_video_hdmi2_fb;
+DIGITAL_OUTPUT stream_video_usbc_fb;
+DIGITAL_OUTPUT stream_video_auto_fb;
 // ANALOG_OUTPUT 
 // STRING_OUTPUT 
-STRING_OUTPUT tx$;
 STRING_OUTPUT debug;
+STRING_OUTPUT tx$;
 /*******************************************************************************************
   SOCKETS
   (Uncomment and define socket definitions as needed)
@@ -169,7 +174,6 @@ function sendCmd (string cmdBody$)
 	makestring (tx$,"%s&%s&%s",cmdHead$,cmdBody$,cmdTail$);
 }
 
-
 /*
 Integer_Function MyIntFunction1()
 {
@@ -202,60 +206,69 @@ PUSH input
     // TODO:  Add code here
 }
 */
-PUSH encoder_fullscreen_mode_set
-{
-string temp$[255];
-temp$="STREAM.VIDEO=DECODER_" + itoa(GetLastModifiedArrayIndex());
-sendCmd(temp$); 
-}
-
-PUSH pip_mode_set
-{
-sendCmd("STREAM.VIDEO=PIP"); 
-}
-
-PUSH pap_mode_set
-{
-sendCmd("STREAM.VIDEO=POP"); 
-}
-
-PUSH quad_mode_set
-{
-sendCmd("STREAM.VIDEO=QUAD"); 
-}
-
-PUSH encoder_fullscreen_mode_set
-{
-string temp$[255];
-temp$="STREAM.AUDIO=DECODER_" + itoa(GetLastModifiedArrayIndex());
-sendCmd(temp$); 
-}
-
-PUSH borders_all_on
-{
-sendCmd("MV.BORDER_ON=ALL|ALL");
-}
-
-PUSH borders_all_off
-{
-sendCmd("MV.BORDER_OFF=ALL|ALL");
-}
                 
-PUSH poll_mode
-{
-sendCmd("QUERY.KEY=STREAM.VIDEO");
-}
 
-PUSH poll_encoder_audio_source
+PUSH poll_audio_source
 {
 sendCmd("QUERY.KEY=STREAM.AUDIO");
 }
 
-PUSH encoder_audio_source_set
+PUSH poll_video_source
 {
-string temp$[255];
-temp$="STREAM.AUDIO=DECODER_" + itoa(GetLastModifiedArrayIndex());
-sendCmd(temp$); 
+sendCmd("QUERY.KEY=STREAM.VIDEO");
+}
+
+PUSH poll_video_detected
+{
+sendCmd("QUERY.VIDEO_TIMING=TRUE");
+}
+
+PUSH stream_audio_hdmi
+{
+sendCmd("STREAM.AUDIO=HDMI"); 
+sendCmd("QUERY.KEY=STREAM.AUDIO");
+}
+                
+PUSH stream_audio_dante
+{
+sendCmd("STREAM.AUDIO=DANTE"); 
+sendCmd("QUERY.KEY=STREAM.AUDIO");
+}
+
+PUSH stream_audio_analog
+{
+sendCmd("STREAM.AUDIO=ANALOG"); 
+sendCmd("QUERY.KEY=STREAM.AUDIO");
+}
+                
+PUSH stream_audio_bluetooth
+{
+sendCmd("STREAM.AUDIO=BT"); 
+sendCmd("QUERY.KEY=STREAM.AUDIO");
+}
+
+PUSH stream_video_hdmi1
+{
+sendCmd("STREAM.VIDEO=HDMI1"); 
+sendCmd("QUERY.KEY=STREAM.VIDEO");
+}
+
+PUSH stream_video_hdmi2
+{
+sendCmd("STREAM.VIDEO=HDMI2"); 
+sendCmd("QUERY.KEY=STREAM.VIDEO");
+}
+
+PUSH stream_video_usbc
+{
+sendCmd("STREAM.VIDEO=USB-C"); 
+sendCmd("QUERY.KEY=STREAM.VIDEO");
+}
+
+PUSH stream_video_auto
+{
+sendCmd("STREAM.VIDEO=AUTO"); 
+sendCmd("QUERY.KEY=STREAM.VIDEO");
 }
                 
 /*
@@ -312,98 +325,87 @@ THREADSAFE CHANGE rx$
 
 	String tmpString[65534];
 	String Chomp$[255];
-	integer loop;
-	integer which_fullscreen;
+//	integer loop;
  
 	While(1) // This While(1) is OK 
 	{ 
 		Try // Prevents an exception from exiting the event 
 		{ 
 		tmpString = Gather("\x0A", rx$); //Gather keeps the priority high until delimiter is found 
+
+		if (debug_enable=1)
+				makestring(debug,"tmpString %s ", tmpString);
+
 		// processing of tmpString
 		if (FIND("&STREAM.VIDEO", tmpString)) //video mode message
 			{
-			for (loop = 1 to GetNumArrayCols (mode_fb_temp))
-				{
-				mode_fb_temp[loop]=0;
-				}
-				
+			stream_video_auto_fb = 0;
+			stream_video_hdmi1_fb = 0;
+			stream_video_hdmi2_fb = 0;
+			stream_video_usbc_fb = 0;
+			
 			Chomp$ = REMOVE ("\x0A",tmpString);
 			
 			if (debug_enable=1)
-				makestring(debug,"mode message %s ", Chomp$);
+				makestring(debug,"STREAM.VIDEO message %s ", Chomp$);
 			
-			if (find("DECODER_",Chomp$))// fullscreen single decoder
+			if (find("=AUTO",Chomp$))// auto input
 				{
-				which_fullscreen = atoi (Chomp$);
-
-				if (debug_enable=1)
-					makestring(debug,"Found mode fullscreen DECODER %u", which_fullscreen);
-					
-				for (loop = 1 to GetNumArrayCols (mode_fb_temp))
-					{
-					if (loop = which_fullscreen)
-						mode_fb_temp[loop]=1;
-						else
-							mode_fb_temp[loop]=0;
-					}
+				stream_video_auto_fb = 1;
 				}
-				else if (find("PIP",Chomp$))// picture in picture
+				else if (find("=HDMI1",Chomp$))// HDMI1
 					{
-					mode_fb_temp[PIP] = 1;
+					stream_video_hdmi1_fb = 1;
 					}
-					else if (find("POP",Chomp$))// picture on picture / picture aside picture
-						{
-						mode_fb_temp[POP] = 1;
+					else if (find("=HDMI2",Chomp$))						{
+						stream_video_hdmi2_fb = 1;
 						}
-						else if (find("QUAD",Chomp$))// picture on picture / picture aside picture
+						else if (find("=USB-C",Chomp$))
 							{
-							mode_fb_temp[QUAD] = 1;
+							stream_video_usbc_fb = 1;
 							}
-
-			for (loop = 1 to GetNumArrayCols (mode_fb_temp))
-				{
-				if ((loop > 0) && (loop < 5))
-					{
-					encoder_fullscreen_mode_fb[loop] = mode_fb_temp[loop];
-					}	
-					else if (loop = PIP)
-						{
-						pip_mode_fb = mode_fb_temp[loop];
-						}
-						else if (loop = POP)
-							{
-							pap_mode_fb = mode_fb_temp[loop];
-							}
-							else if (loop = QUAD)
-								{
-								quad_mode_fb = mode_fb_temp[loop];
-								}
-				}
 			}
 			
 		if (FIND("&STREAM.AUDIO", tmpString)) //audio source message
 			{
+			
 			Chomp$ = REMOVE ("\x0A",tmpString);
+
+			stream_audio_hdmi_fb =0;
+			stream_audio_dante_fb =0;
+			stream_audio_analog_fb =0;
+			stream_audio_bluetooth_fb =0;
+
 			if (debug_enable=1)
 				makestring(debug,"audio source message %s ", Chomp$);
 			
-			if (FIND("DECODER_", Chomp$)) 
-				{					
-				for (loop = 1 to GetNumArrayCols (encoder_audio_source_fb))
-					{
-					if (loop = atoi (Chomp$))
-						{
-						encoder_audio_source_fb[loop] = 1;
+			if (FIND("HDMI", Chomp$)) 
+				{
+				stream_audio_hdmi_fb = 1;
+				}
+				else if (find("=DANTE",Chomp$))					{
+					stream_audio_dante_fb = 1;
+					}	
+					else if (find("=ANALOG",Chomp$))						{
+						stream_audio_analog_fb = 1;
 						}
-						else	
+						else if (find("=BT",Chomp$))
 							{
-							encoder_audio_source_fb[loop] = 0;
+							stream_audio_bluetooth_fb = 1;
 							}
-					}
-                }
+		}
+
+		if (FIND("VIDEO.TIMING=Not Available", tmpString)) //audio source message
+			{
+			video_detected_fb=0;
 			}
-		
+
+		if (FIND("VIDEO.TIMING=Timing Table", tmpString)) //audio source message
+			{
+			video_detected_fb=1;
+			//opportunity for further parsing the table if real stats are desired post-install
+			}
+			
 		tmpString = "";
 		} 
 
