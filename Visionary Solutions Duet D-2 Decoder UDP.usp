@@ -4,10 +4,10 @@
 *******************************************************************************************/
 /*
 Dealer Name:ASEI
-System Name:
+System Name: testbed
 System Number:
 Programmer:Pat Santucci
-Comments: 
+Comments: !ver#:0.0
 */
 
 /*******************************************************************************************
@@ -16,7 +16,7 @@ Comments:
 *******************************************************************************************/
 // #ENABLE_DYNAMIC
 #SYMBOL_NAME "Visionary Solutions Duet D-2 Decoder UDP"
-#HINT "Duet E-2 Single unit control via UDP"
+#HINT "Duet E-2 control via UDP"
 // #DEFINE_CONSTANT
 // #CATEGORY "" 
 #CATEGORY "38" // Signal Routing
@@ -32,11 +32,76 @@ Comments:
 // #ENCODING_UTF16
 // #ENCODING_INHERIT_FROM_PARENT
 // #ENCODING_INHERIT_FROM_PROGRAM
-/*
+
 #HELP_BEGIN
-   (add additional lines of help lines)
+Controls Visionary Solutions Decoders using the X4K API 2.x.x.
+Tested against DuetD-2 firmware 2.3.169
+
+Inputs:
+
+debug_enable: hold high to produce debugging messages on output "debug"
+
+poll_video_source: pulse to get the video input source of the streaming output
+(HDMI1, HDMI2, USB-C or AUTO)
+
+poll_audio_source: pulse to get the audio input source of the streaming output
+(HDMI, ANALOG, DANTE or Bluetooth)
+   
+poll_video_detected: pulse to query the encoder for video timing of the current
+video source
+
+
+stream_audio_hdmi: sets the audio input source of the streaming output to the current
+hdmi input
+stream_audio_analog: sets the audio input source of the streaming output to the analog
+audio input
+stream_audio_dante: sets the audio input source of the streaming output to dante
+stream_audio_bluetooth: sets the audio input source of the streaming output to bluetooth
+on wallplates with bluetooth receivers.
+
+All of these commands are automatically followed by a poll_audio_source to update
+feedback.
+
+stream_video_hdmi1: sets the video input source of the streaming output to HDMI1
+stream_video_hdmi2: sets the video input source of the streaming output to HDMI2
+stream_video_usbc: sets the video input source of the streaming output to USB-C
+stream_video_auto: sets the video input source of the streaming output to AUTO
+
+All of these commands are automatically followed by a poll_video_source to update
+feedback.
+
+rx$: connect to the RX$ of a standard UDP/IP Communications control module on port 8000.
+
+
+Outputs:
+
+video_detected_fb: high when the current input had valid video timimg at the last
+poll, low if not.
+
+
+stream_audio_hdmi_fb: high when the audio input source of the streaming output is the current
+hdmi input
+stream_audio_analog_fb: high when the audio input source of the streaming output is the analog
+input
+stream_audio_dante_fb: high when the audio input source of the streaming output is the dante
+input
+stream_audio_bluetooth_fb: high when the audio input source of the streaming output is the
+bluetooth input
+
+
+stream_video_hdmi1_fb: high when the video input source of the streaming output is hdmi1
+stream_video_hdmi2_fb: high when the video input source of the streaming output is hdmi2
+stream_video_usbc_fb: high when the video input source of the streaming output is usb-c
+stream_video_auto_fb: high when the video input source of the streaming output is auto. Note
+that there is no way to detect which input was automatically selected.
+
+debug: passes debugging messages while debug_enable is high.
+
+tx$: connect to the TX$ of a standard UDP/IP Communications control module on port 8000. 
+Note that UDP/IP may be connected to the IP address of a single encoder, or to the
+multicast address 226.0.0.19. When set to multicast, all encoders in the domain will
+execute the command. Feedback is not predictable for mutlticast use.
 #HELP_END
-*/
 
 /*******************************************************************************************
   Include Libraries
@@ -378,7 +443,6 @@ THREADSAFE CHANGE rx$
 				makestring(debug,"separator_position is %d ", separator_position);
                 }
                 
-			//stream_host_ip_fb = mid(Chomp$,delimeter_position + 1,len(Chomp$) - delimeter_position -1);
 			stream_host_ip_fb = mid(Chomp$,delimeter_position + 1, separator_position - delimeter_position -1); //from "=" to the next "&", exclusive
 			}
 

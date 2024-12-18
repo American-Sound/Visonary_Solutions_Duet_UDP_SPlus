@@ -7,7 +7,7 @@ Dealer Name:ASEI
 System Name:
 System Number:
 Programmer:Pat Santucci
-Comments: 
+Comments: !ver#:0.0
 */
 
 /*******************************************************************************************
@@ -16,7 +16,7 @@ Comments:
 *******************************************************************************************/
 // #ENABLE_DYNAMIC
 #SYMBOL_NAME "Visionary Solutions Duet E-2 Encoder UDP"
-#HINT "Duet E-2 Single unit control via UDP"
+#HINT "Duet E-2 via UDP"
 // #DEFINE_CONSTANT
 // #CATEGORY "" 
 #CATEGORY "38" // Signal Routing
@@ -32,11 +32,72 @@ Comments:
 // #ENCODING_UTF16
 // #ENCODING_INHERIT_FROM_PARENT
 // #ENCODING_INHERIT_FROM_PROGRAM
-/*
+
 #HELP_BEGIN
-   (add additional lines of help lines)
+Controls Visionary Solutions Decoders using the X4K API 2.x.x.
+Tested against DuetD-2 firmware 2.3.169
+
+Inputs:
+
+debug_enable: hold high to produce debugging messages on output "debug"
+
+poll_video_output: pulse to get the state of the HDMI output (OFF, NORMAL, LOGO,
+ or STANDBY)
+
+poll_stream_host: pulse to get the IP address of the encoder from which the
+current stream is sent
+   
+poll_video_detected: pulse to query the decoder for video timing of the incoming stream
+
+
+video_output_off: sets the video output mode to OFF
+video_output_normal: sets the video output mode to NORMAL
+video_output_logo: sets the video output mode to LOGO
+video_output_standby: sets the video output mode to STANDBY
+
+Note that setting video_output_x does not necessarily produce the desired image on a
+connected display. Video timout configuration can e.g. make the logo appear in normal
+mode. All of these commands are automatically followed by a poll_video_output to update
+feedback.
+
+stream_host_ip: set to the valid IP address of an ecoder to connect the decoder to its
+stream. Automatically followed by a poll_stream_host and poll_video_output to update
+feedback. poll_video_output is needed because a change of host forces mode to NORMAL. 
+
+cec_cmd: set to a sequence of CEC command bytes, represented as plain ASCII and colon
+delimited, e.g. "10:04" for power on. This is the format used by cec-o-matic.com. 
+For comparison, the same command from a serial send to a Crestron NVX device would be 
+represented as raw hex bytes - "\x10\x04".
+
+rx$: connect to the RX$ of a standard UDP/IP Communications control module on port 8000.
+
+
+Outputs:
+
+video_detected_fb: high when the incoming stream had valid video timimg at the last
+poll, low if not.
+
+
+video_output_off_fb: high when video output mode is OFF
+video_output_normal_fb: high when video output mode is NORMAL
+video_output_logo_fb: high when video output mode is LOGO
+video_output_standby: high when video output mode is STANDBY
+
+Note that setting video_output_x does not necessarily produce the desired image on a
+connected display.
+
+stream_host_ip_fb: reports the IP address of the last set host. Note that the video output
+will only display the stream from this host if valid video is detected; it is entirely 
+possible for this value to reflect the desired encoder and mode to be normal and still
+see something else on the connected display.
+
+debug: passes debugging messages while debug_enable is high.
+
+tx$: connect to the TX$ of a standard UDP/IP Communications control module on port 8000. 
+Note that UDP/IP may be connected to the IP address of a single decoder, or to the
+multicast address 226.0.0.19. When set to multicast, all decoders in the domain will
+execute the command. Feedback is not predictable for mutlticast use.
 #HELP_END
-*/
 
 /*******************************************************************************************
   Include Libraries
