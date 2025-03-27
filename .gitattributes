@@ -8,6 +8,7 @@
 *.dip filter=lfs diff=lfs merge=lfs -text
 *.c3prj/* filter=lfs diff=lfs merge=lfs -text
 *.sgd filter=lfs diff=lfs merge=lfs -text
+*.vtp filter=lfs diff=lfs merge=lfs -text
 *.sgd_ filter=lfs diff=lfs merge=lfs -text
 *.sgd2 filter=lfs diff=lfs merge=lfs -text
 *.smft filter=lfs diff=lfs merge=lfs -text
